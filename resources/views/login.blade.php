@@ -88,13 +88,19 @@
                 processData : false,
                 data : new FormData(form),
                 success : async (res)=>{
+
+
+
                     await Swal.fire({
                         title : res.status == 200 ? "Sukses" : "Error",
                         icon : res.status == 200 ? "success" : "error",
                         text : res.message
                     });
 
-                    if(res.status == 200 )window.location.href = "/";
+                    if(res.status == 200 ){
+                      window.localStorage.setItem("api-key", res.data.token);
+                      window.location.href = "/";
+                    }
                 },
                 error : (err)=>{
                     console.log(err);

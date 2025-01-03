@@ -57,7 +57,7 @@ class UserController extends Controller
 
             if(Auth::attempt($req->only('username', 'password'))){
                 $token = $req->user()->createToken("api-token")->plainTextToken;
-            
+                User::where("username", $req->username)->update(["token" => $token]);
                 return response()->json([
                     "status" => 200,
                     "message" => "Berhasil login !",

@@ -7,7 +7,7 @@ use Auth;
 class SessionController extends Controller
 {
     public function destroy(Request $req){
-      
+        Auth::logout();
 
     
         return redirect('/login'); // Redir
