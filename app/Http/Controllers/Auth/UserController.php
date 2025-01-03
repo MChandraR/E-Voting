@@ -59,7 +59,7 @@ class UserController extends Controller
                 Auth::guard(Auth::user()->role??"user" == "admin" ? "admin" : "web")->attempt($req->only('username', 'password'));
                 $token = $req->user()->createToken("api-token")->plainTextToken;
                 $user = User::where("username", $req->username)->update(["token" => $token]);
-                Auth::user()->role = $user->role ?? "user";
+                Auth::user()->role = Auth::user()->role?? "user";
                 
                 return response()->json([
                     "status" => 200,

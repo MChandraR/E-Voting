@@ -44,9 +44,15 @@ class VotingController extends Controller
             "data" => null
         ], 400);
     }
-
+    $from = date('Y');
+    $to = date('Y-m-d H:m:s');
+    error_log($to);
+    if(isset($_GET["status"]) && $_GET['status']=="active"){
+        $votings = Voting::where('voting_end', '>=', $to)->get();
+    }else{
+        $votings = Voting::all();
+    }
     // Ambil semua data voting
-    $votings = Voting::all();
 
     // Proses setiap voting
     $result = $votings->map(function ($voting) use ($user) {
