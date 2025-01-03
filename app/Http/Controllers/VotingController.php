@@ -7,6 +7,8 @@ use App\Models\Voting;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
 use Auth;
+use Illuminate\Support\Facades\DB;
+
 
 class VotingController extends Controller
 {
@@ -26,7 +28,28 @@ class VotingController extends Controller
         return response()->json([
             "status" => 200,
             "message" => "Berhasil mengambil data voting!",
-            "data" => Voting::all()
+            "data" => Voting::select(["voting_name", "description", "voting_start", "voting_end"])->get()
+        ], 200);
+    }
+
+    public function UserVote(Request $req){
+        $user = User::where("token",explode(" ", $req->header("Authorization"))[1])->first();
+        $voting = Voting::select(["voting_name", "candidate", "description", "voting_start", "voting_end"])->get();
+        
+        $filter =  Voting::select(["data.candidate"])->where("data.user_id", $user->id)->get();
+        $count= 0;
+        foreach($filter as $ft){
+            $voting[$count]["data"] = [
+                "candidate" => $filter[$count]->data[0]["candidate"],
+                "voteCount" => count($ft->data)
+            ];
+            $count++;
+        };
+
+        return response()->json([
+            "status" => 200,
+            "message" =>  $user ? "Berhasil mengambil data voting!" : "Gagal mengambil data votingan !",
+            "data" => $user ? $voting : NULL
         ], 200);
     }
 
@@ -127,18 +150,33 @@ class VotingController extends Controller
 
     public function elect(Request $req){
         try{
-            $user = User::where("token", $req->header('Authorization'))->count();
-            $check = Voting::where();
-
             $req->validate([
                 "voting_id" => 'required',
+                "candidate" => 'required',
             ]);
 
-            return response()->json([
-                "status" => 200,
-                "message" => "Berhasil menghapus data voting !",
-                "data" => Voting::where('id', $req->id)->delete()
-            ], 200);
+
+            $user = User::where("token", explode(" ",$req->header('Authorization'))[1])->first();
+            if( $user &&  Voting::where("id", $req->voting_id)->where("data.user_id",$user->id)->count() == 0 ){
+
+                Voting::where("id", $req->voting_id)->update(array('$push' => array( "data" => [
+                    "user_id" => $user->id,
+                    "created_at" => date("Y-m-d H:m:s"),
+                    "candidate" => (int)$req->candidate
+                ])));
+
+                return response()->json([
+                    "status" => 200,
+                    "message" => "Berhasil melakukan voting !",
+                    "data" => $req
+                ], 200);
+            }else{
+                return response()->json([
+                    "status" => 401,
+                    "message" => "Anda sudah memilih ! !",
+                    "data" => NULL
+                ],401);
+            }
 
         }catch(ValidationException $e){
             return response()->json([

@@ -66,25 +66,32 @@
         <script src="js/scripts.js"></script>
         <script src="{{asset('js/jquery-3.7.1.js')}}"></script>
 
+        <script src="js/sweetalert2@11.js"></script>
     </body>
 </html>
 
 <script>
     function fetchData(){
+        
+        $.ajaxSetup({
+            headers : {
+                'Authorization' : "Bearer " + window.localStorage.getItem("api-key") ,
+                'Content-Type' : 'application/json'
+            }
+        });
         $.ajax({
-            url : "{{$apiRoute}}/voting?status=active",
+            url : "{{$apiRoute}}/user/voting?status=active",
             success : (res)=>{
                 $('#voteList')[0].innerHTML = "";
-                res.data.forEach((d)=>{
+                res.data.forEach((d, idx)=>{
                     let candView = "";
-                    d.candidate.forEach((cand)=>{
+                    d.candidate.forEach((cand, idx)=>{
                         candView += 
                         `<div> 
                             <center>
                             <img src="{{asset('assets/images/man.png')}}"  style="width : 100%;"> 
                             <b><h4>${cand.name}</h4></b>
-                            <input type="radio" name="candidate">
-                            </input>
+                            <input type="radio" name="candidate" value="${idx}" checked="${d.data ? (d.data.candidate ? (d.data.candidate == idx ? 'checked' : '' ): 0 ) : 0 }">
                             </center>
                         </div>`;
                     });
@@ -99,14 +106,15 @@
                                             <p>${d.description}</p>
                                             <p>Waktu mulai : ${new Date(d.voting_start).toLocaleString()}</p>
                                             <p>Waktu berakhir : ${new Date(d.voting_end).toLocaleString()}</p>
-                                            <p>Total Suara Terkumpul : </p>
+                                            <p>Total Suara Terkumpul : ${d.data ? d.data.voteCount ?? 0 : 0}</p>
                                             <br>
-                                            <button class="btn btn-primary">Vote Sekarang</button>
+                                            <button class="btn btn-primary" onClick="voting('form${idx}')">Vote Sekarang</button>
                                         </div>
 
                                         <div>
                                             <h3 class="fw-bolder">Kandidat/Calon</h2>
-                                            <form>
+                                            <form id="form${idx}" enctype="multipart/form-data">
+                                                <input name="voting_id" type="text"  hidden value="${d.id}">
                                                 <div class="mt2" style="margin-top : 2rem;display: flex; column-gap : 1rem;">
                                                 ${candView}
                                                 </div>
@@ -121,6 +129,40 @@
             },
             error : (err)=>{
 
+            }
+        });
+    }
+
+
+    function voting(id){
+
+        $.ajaxSetup({
+            headers : {
+                'Authorization' : "Bearer " + window.localStorage.getItem("api-key") ,
+                'Content-Type' : 'application/json'
+            }
+        });
+        var object = {};
+        new FormData($(`#`+id)[0]).forEach((value, key) => object[key] = value);
+        var json = JSON.stringify(object);
+        
+        $.ajax({
+            url : "{{$apiRoute}}/voting",
+            method : "PATCH",
+            data : json,
+            success : (res)=>{
+                Swal.fire({
+                    icon : res.status == 200 ? "success" : "error",
+                    text  : res.message,
+                    title : res.status == 200 ? "Berhasil" : "Gagal",
+                });
+            },
+            error : (err)=>{
+                Swal.fire({
+                    icon :  "error",
+                    text  : err.responseJSON.message,
+                    title : "Error",
+                });
             }
         });
     }

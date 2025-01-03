@@ -20,9 +20,10 @@ Route::post('/login', [UserController::class, 'login']);
 
 
 Route::get('/voting', [VotingController::class, 'index']);
+Route::get('/user/voting', [VotingController::class, 'userVote']);
 Route::post('/voting', [VotingController::class, 'store'])->middleware('auth:sanctum');
 Route::put('/voting', [VotingController::class, 'update'])->middleware('auth:sanctum');
 Route::delete('/voting', [VotingController::class, 'destroy'])->middleware('auth:sanctum');
-
+Route::patch('/voting', [VotingController::class, 'elect'])->middleware('auth:sanctum');
 
 Route::post('/check', [VotingController::class, 'check']);
